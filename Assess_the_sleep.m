@@ -47,7 +47,13 @@
 % 61?70. https://doi.org/10.1016/j.jneumeth.2019.01.013
 
 function [] = Assess_the_sleep(subject_id)
-
+global SelectedEpochs time_axes Gold_Standard_Score hPlot what_feat_plot median_feat feature_struct i subject_id;
+            
+            SelectedEpochs = []; % vector for selected epoch to score manually
+            Gold_Standard_Score = []; % vector to hold gold standard scoring
+            hPlot = []; % handler of plot
+            
+            
 % load the data from folder subject_id/subject_id
 load(sprintf('%s%s%s%s%s_data.mat', cd, filesep, subject_id, filesep, subject_id));
 
@@ -67,6 +73,7 @@ i = 1; % what DAY to start from
 from_el = 1; % what ELECTRODE to start from
 skip_el = 1; % which STEP to skip to other electrodes
 n_electrodes = length(El_number); % get number of channels available
+n_electrodes = 1;
 
 %curr_seg = zeros(n_electrodes, 34527199);
 WT = [];
@@ -189,10 +196,13 @@ what_feat_plot = [1, 2, 3, 5, 8, 11, 14, 17]; % what features to plot
 from_f = from_f(3:end,1); % get rid of three high freq samples
 [~,ind] = max(median_WT(from_f, :)); % get maximal spectral power in each epoch
 max_plot = f_cwt(from_f(ind,:),1)'; % save maximal freqency in each epoch
+time_axes = [1:length(max_plot)];
 
-% plot score, if available and plot median accross electrodes
+%% plot score, if available and plot median accross electrodes
 
 hFig = figure('Position', [700, 1000, 1700, 1200]);
+set(hFig, 'KeyPressFcn', @MainWindowManualClick_callback); % create call back for mouse clicks
+           
 subplot(3+length(what_feat_plot)+1,1,1)
 imagesc(median_WT(from_f,:));
 yticklabels([f_cwt(from_f(3)) f_cwt(from_f(9)) f_cwt(from_f(14)) f_cwt(from_f(20))...
@@ -218,7 +228,7 @@ for i = 3:2+length(what_feat_plot)
 end
 
 % do Delta Beta plot and show candidates of clear wake and clear deep sleep
-subplot(3+length(what_feat_plot)+1,1,i+1);
+hPlot = subplot(3+length(what_feat_plot)+1,1,i+1);
 Db = median_feat(what_feat_plot(4),:)./median_feat(what_feat_plot(end),:);
 DbcritAW = 5;
 DbcritSWS = 90;
@@ -233,6 +243,7 @@ xlim([0 length(max_plot)]);
 title(sprintf('%s over %s', ...
     feature_struct.features_key{what_feat_plot(4)}, feature_struct.features_key{what_feat_plot(end)}));
 set(gca,'Xticklabel',[]) 
+set(gcf, 'WindowButtonDownFcn', @getMousePositionOnImage); % define mouse click callback
 
 % plot hypnogram if available
 subplot(3+length(what_feat_plot)+1,1,i+2);
@@ -249,9 +260,9 @@ for j = 1:length(all_ha)
 end
 
 %% print images
-dest = [cd filesep subject_id filesep];
-saveas(hFig,sprintf('%s%s%s_Median_Spectra_features_and_Sleep_Stages.png', dest, filesep, num2str(subject_id)));
-savefig(hFig,sprintf('%s%s%s_Median_Spectra_features_and_Sleep_Stages.fig', dest, filesep, num2str(subject_id)));
+%dest = [cd filesep subject_id filesep];
+%saveas(hFig,sprintf('%s%s%s_Median_Spectra_features_and_Sleep_Stages.png', dest, filesep, num2str(subject_id)));
+%savefig(hFig,sprintf('%s%s%s_Median_Spectra_features_and_Sleep_Stages.fig', dest, filesep, num2str(subject_id)));
 
 %% ----- BreakPoint -----
 % one can put braekpoint here to do manual scoring of sleep
@@ -259,9 +270,158 @@ savefig(hFig,sprintf('%s%s%s_Median_Spectra_features_and_Sleep_Stages.fig', dest
 %% Action Item: continue with coding to enable scoring of sleep right in the 
 % figure when it is opened and presented to user
 
-close(hFig);
+%close(hFig);
 disp('Done...');
 
 
+end
+
+
+%% --- For manual corrections ---
+
+function MainWindowManualClick_callback(src, evt)
+   global   SelectedEpochs  time_axes ...
+            Gold_Standard_Score subject_id; 
+   
+        
+            if strcmp(evt.Character, 's')
+                % saving data 
+                h_msgbox = msgbox('Saving Scores');
+                dest = [cd filesep subject_id filesep];
+                save(strcat(dest, subject_id, '_Manual_Scoring.mat'), 'Gold_Standard_Score', '-v7.3');
+                close(h_msgbox);
+            end
+            
+               
+
+           if size(SelectedEpochs,2) == 2
+               WhatScore = str2num(evt.Character);
+               if strcmp(evt.Character, 'b') & ~isempty(Score_backup_temp)
+%                    % place back saved score
+%                    OnsetRow = find(time_axes >=    SelectedEpochs(1,1),1);
+%                    OffsetRow = find(time_axes <=    SelectedEpochs(1,2),1,'last');
+%                    Gold_Standard_Score(OnsetRow:OffsetRow, 1) = Score_backup_temp;
+%                    Score_backup_temp;
+%                    RefreshHypnoPlotManual(); % refresh plot
+               else
+                   if ~isempty(find([0 1 2 3 5 7] == WhatScore))   % if some reasonable number was hit
+                       % reassing all epochs selected to selected class
+                       OnsetRow = find(time_axes >=    SelectedEpochs(1,1),1);
+                       OffsetRow = find(time_axes <=    SelectedEpochs(1,2),1,'last');
+                       
+                       %Score_backup_temp = Gold_Standard_Score(OnsetRow:OffsetRow, 1);
+                       
+                       switch WhatScore
+                           case 0
+                               Gold_Standard_Score(OnsetRow:OffsetRow) = 6*ones(1, OffsetRow-OnsetRow+1);  % for plotting Awake is top
+                               %case 1 aggregated_Final_Scores(OnsetRow, OffsetRow, 1) = 3; % for plotting one is 4
+                           case 1
+                               Gold_Standard_Score(OnsetRow:OffsetRow) = 4*ones(1, OffsetRow-OnsetRow+1); % N1 is 4
+                           case 2
+                               Gold_Standard_Score(OnsetRow:OffsetRow) = 3*ones(1, OffsetRow-OnsetRow+1); % N2 is 3
+                           case 3
+                               Gold_Standard_Score(OnsetRow:OffsetRow) = 2*ones(1, OffsetRow-OnsetRow+1); % N3 is 2
+                           case 5
+                               Gold_Standard_Score(OnsetRow:OffsetRow) = 5*ones(1, OffsetRow-OnsetRow+1); % REM is 5 
+                           case 7
+                               Gold_Standard_Score(OnsetRow:OffsetRow) = 7*ones(1, OffsetRow-OnsetRow+1); % Unknown is 7
+                           case 9
+                               pause('off'); % break paused of execution of the script till scoring is done
+                       end
+                   end
+                   RefreshHypnoPlotManual(); % refresh plot
+                   
+               end
+           end
+end
+
+
+function getMousePositionOnImage(src, event)
+global SelectedEpochs
+
+handles = get(src);
+cursorPoint = get(handles.CurrentAxes, 'CurrentPoint');
+curX = cursorPoint(1,1);
+curY = cursorPoint(1,2);
+
+%check if mouse clicked outside of axes component
+xLimits = get(handles.CurrentAxes, 'xlim');
+yLimits = get(handles.CurrentAxes, 'ylim');
+
+if (curX<min(xLimits)) (curX==min(xLimits))
+end
+if (curX>max(xLimits)) (curX==max(xLimits))
+end
+
+WhatToChange = size(SelectedEpochs,2)+1; % get index of selected segments (to define if start, end or delete).
+if WhatToChange >= 3
+    SelectedEpochs = []; % Erase Selected Epochs
+else
+    SelectedEpochs(1, WhatToChange) = curX (1); % Put in x coordinate of click
+end
+SelectedEpochs = sort(SelectedEpochs);
+
+RefreshHypnoPlotManual();
+
+end
+
+
+function RefreshHypnoPlotManual()
+   global SelectedEpochs time_axes Gold_Standard_Score hPlot  what_feat_plot median_feat feature_struct i;
+           y_limites = [];
+           
+           delete(hPlot);
+
+           % do Delta Beta plot and show candidates of clear wake and clear deep sleep
+           hPlot = subplot(3+length(what_feat_plot)+1,1,i+1);
+           Db = median_feat(what_feat_plot(4),:)./median_feat(what_feat_plot(end),:);
+           DbcritAW = 5;
+           DbcritSWS = 90;
+           plot(Db);
+           hold on;
+           plot(find(Db<prctile(Db,DbcritAW)),Db(find(Db<prctile(Db,DbcritAW))),...
+               'yo', 'MarkerSize', 5, 'MarkerFaceColor', 'y');
+           plot(find(Db>prctile(Db,DbcritSWS)),Db(find(Db>prctile(Db,DbcritSWS))),...
+               'ko', 'MarkerSize', 5, 'MarkerFaceColor', 'k');
+           
+           xlim([0 length(median_feat)]);
+           title(sprintf('%s over %s', ...
+               feature_struct.features_key{what_feat_plot(4)}, feature_struct.features_key{what_feat_plot(end)}));
+           set(gca,'Xticklabel',[])
+           set(gcf, 'WindowButtonDownFcn', @getMousePositionOnImage); % define mouse click callback
+
+           hold on;
+           
+           % plot vertical selection if found
+            y_limites = ylim;
+           if size(SelectedEpochs,2) == 1
+                plot([SelectedEpochs(1,1) SelectedEpochs(1,1)],  [y_limites(1) y_limites(2)], 'g', 'LineWidth', 2); % mark start of selected segment
+           elseif size(SelectedEpochs,2) == 2
+                plot([SelectedEpochs(1,1) SelectedEpochs(1,1)],  [y_limites(1) y_limites(2)], 'g', 'LineWidth', 2); % mark start of selected segment
+                plot([SelectedEpochs(1,2) SelectedEpochs(1,2)],  [y_limites(1) y_limites(2)], 'r', 'LineWidth', 2); % mark start of selected segment
+           end
+           
+            % plot score horizontal bar for each possible score
+             % plot sleep score horizontal bar for each possible behavioral
+           % stage
+           y_limites = ylim;
+           plot(time_axes(Gold_Standard_Score==7), ...
+           y_limites(2)*ones(1, size(Gold_Standard_Score(Gold_Standard_Score==7),2)), ...
+           'o', 'color',[0,0,0]+0.7, 'LineWidth', 5); % UNKNOWN
+           plot(time_axes(Gold_Standard_Score==6), ...
+           y_limites(2)*ones(1, size(Gold_Standard_Score(Gold_Standard_Score==6),2)), ...
+           'o','color',[1,1,0], 'LineWidth', 5);  % AWAKE
+           plot(time_axes(Gold_Standard_Score==5), ...
+           y_limites(2)*ones(1, size(Gold_Standard_Score(Gold_Standard_Score==5),2)), ...
+           'o','color',[1,0,1], 'LineWidth', 5);  % REM  
+           plot(time_axes(Gold_Standard_Score==4), ...
+           y_limites(2)*ones(1, size(Gold_Standard_Score(Gold_Standard_Score==4),2)), ...
+           'o','color',[91, 207, 244] / 255, 'LineWidth', 5);  % N1     
+           plot(time_axes(Gold_Standard_Score==3), ...
+           y_limites(2)*ones(1, size(Gold_Standard_Score(Gold_Standard_Score==3),2)), ...
+           'o','color',[0,0,1], 'LineWidth', 5);  % N2
+           plot(time_axes(Gold_Standard_Score==2), ...
+           y_limites(2)*ones(1, size(Gold_Standard_Score(Gold_Standard_Score==2),2)), ...
+           'o','color',[0,0,0], 'LineWidth', 5);  % N1      
 end
 
