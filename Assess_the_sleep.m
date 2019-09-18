@@ -7,8 +7,10 @@
 % set properly as a string name with existing folder name:
 % global subject_id; subject_id = '403_017_0002';
 %
-% Next, it extracts features from all electrodes and plot figures to
-% subject_id directory to be ready for electrode selection if needed
+% If feature_struct variable is in Matlab Workspace it skips feature
+% extraction, otherwise goes next, it extracts features from all 
+% electrodes and plot figures to subject_id directory to be ready 
+% for electrode selection if needed
 %
 % Then it aggregates all the features to structure and saves extracted
 % features to /subject_it/subject_id_features.mat
