@@ -50,8 +50,7 @@
 % 61?70. https://doi.org/10.1016/j.jneumeth.2019.01.013
 
 function [] = Assess_the_sleep()
-global SelectedEpochs time_axes Gold_Standard_Score hPlot ...
-what_feat_plot median_feat feature_struct i subject_id hFig 
+global SelectedEpochs time_axes Gold_Standard_Score hPlot what_feat_plot median_feat feature_struct i subject_id hFig;
 
 SelectedEpochs = []; % vector for selected epoch to score manually
 Gold_Standard_Score = []; % vector to hold gold standard scoring
@@ -265,9 +264,8 @@ for j = 1:length(all_ha)
     all_ha(j).YGrid = 'on'; % turn on Y-Grids
 end
 
-% wait till user closes the figure
-waitfor(hFig);
-disp(sprintf('\nFinished scoring for patient number: %s\n', subject_id));
+waitfor(GoNext)
+
 
 end
 
@@ -275,7 +273,9 @@ end
 %% --- For manual corrections ---
 
 function MainWindowManualClick_callback(src, evt)
-global   SelectedEpochs  time_axes Gold_Standard_Score subject_id hFig 
+global   SelectedEpochs  time_axes ...
+    Gold_Standard_Score subject_id hFig;
+
 if strcmp(evt.Character, 's')
     % saving data if confirmed by user
     answer = questdlg('Would you like to save your scoring now?'); 
