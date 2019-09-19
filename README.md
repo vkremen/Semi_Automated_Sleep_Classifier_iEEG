@@ -3,6 +3,10 @@
 # Semi-automated assesment of sleep based on feature analysis of EEG. 
 # Runs and displays attributes of the time-domain data and launches UI 
 # for expert to classify 30-second epochs of the data into AASM2012 sleep classes.
+# If all data are ready in structure described for subject_id_data.mat, than only 
+# Assess_the_sleep script can be run to score one patients. Otherwise processing of 
+# multiple patients can be done using UW_sleep_wrapper.m or its modification. Or in loop
+# calling just Assess_the_sleep script.
 
 # To generate a full Help Report, in the Current Folder browser, 
 # navigate to the folder you want to check, click , and then select Reports > Help Report. 
