@@ -1,42 +1,93 @@
-%% Assess_the_sleep
+%% ASSESS_THE_SLEEP Semi-automated assesment of sleep based on feature analysis of EEG. Runs and displays attributes of the time-domain data and launches UI for expert to classify 30-second epochs of the data into AASM2012 sleep classes.
 %
-% Modified script fo Analysis of University of Wisconsin Madison data.
+% SYNOPSIS: Assess_the_sleep
 %
-% It loads data from structure, looks for /subject_id/subject_id_data.mat
-% It needs subject_id variable defined as global in Matlab Workspace and
-% set properly as a string name with existing folder name:
-% global subject_id; subject_id = '403_017_0002';
+% INPUT It loads data from structure, looks for /subject_id/subject_id_data.mat
+%       It needs subject_id variable defined as global in Matlab Workspace and
+%       set properly as a string name with existing folder name:
+%       global subject_id; subject_id = '403_017_0002';
+%       Input data saved to subject_id_data.mat consists of:
+%           Data: double [M:L], L number of raw EEG data samples for each
+%           of M electrodes.
+%           El_name: cell {1:M}, names in strings of each electrode (max
+%           M).
+%           El_number: double [1:M], numbering of each electrodes (max M).
+%           fs: double [1], sampling rate of data
+%           stage: double 1:L, score of sample in data that has been
+%           manually sleep scored if it was done (if it
+%           wasn't done, the variable is missing)
+%           stage_key: cell array 1:N, description (N - names in strings) of
+%           N sleep stages used for staging of the data and how they
+%           link to numbers and score in STAGE (if it
+%           wasn't done, the variable is missing)
 %
-% If feature_struct variable is in Matlab Workspace it skips feature
-% extraction, otherwise goes next, it extracts features from all 
-% electrodes and plot figures to subject_id directory to be ready 
-% for electrode selection if needed
+%       If feature_struct variable is in Matlab Workspace it skips feature
+%       extraction, otherwise goes next, it extracts features from all 
+%       electrodes and plot figures to subject_id directory to be ready 
+%       for electrode selection if needed
 %
-% Then it aggregates all the features to structure and saves extracted
-% features to /subject_it/subject_id_features.mat
-% file to be used in the future if needed.
+% OUTPUT If feature_struct was not available, it loads the data from 
+%       /subject_id/subject_id_data.m and run a feature extraction (feature_extraction.m) and
+%       Then it aggregates all the features to a structure and saves extracted
+%       features to /subject_it/subject_id_features.mat
+%       file to be used in the future if needed.
+%       feature_struct content looks like this:
+%           WT: double [65:E], wavelet scalogram matrix with 65 frequency
+%           lines and E number of epochs
+%           wavelet_maximas: double [1:E], maximas of power in each epoch (taken from WT)
+%           f_cwt: double [E], frequency of each frequency line in WT
+%           features: double [21,E,M], 21 features calculated for E number
+%           of epoch and M number of channels
+%           features_key: cell array of strings {1:21} contains name of
+%           features
+%           El_name: cell {1:M}, names in strings of each electrode (max
+%           M).
+%           El_number: double [1:M], numbering of each electrodes (max M).
+%           fs: double [1], sampling rate of data
+%           stage: double 1:L, score of sample in data that has been
+%           manually sleep scored if it was done (if it
+%           wasn't done, the variable is missing)
+%           stage_key: cell array 1:N, description (N - names in strings) of
+%           N sleep stages used for staging of the data and how they
+%           link to numbers and score in STAGE (if it
+%           wasn't done, the variable is missing)
+%           fs: double [1], sampling rate of time-domain data
+%           El_name: 
 %
-% Then it extracts the median features and plots the resulting image to
-% assess the sleep architecture. It saves the plotted images as png and fig
-% with name: Median_Spectra_features_and_Sleep_Stage.
-% It plots: wavelet scalogram, all extracted features, Delta/Beta ratio,
-% and hypnogram if available from Scalp Scoring (from original Madison
-% structure)
+%       Then it extracts the median features and plots the resulting image to
+%       assess the sleep architecture. It saves the plotted images as png and fig
+%       with name: Median_Spectra_features_and_Sleep_Stage.
+%       It also plots: wavelet scalogram, all extracted features, Delta/Beta ratio,
+%       and hypnogram if available from Scalp Scoring to enable manual
+%       stagining of the sleep based on features and wavelet scalogram.
 %
+% CONTROLS of Figure and sleep scoring:
+%       KEY STROKES and mouse click works on any part of windows when 
+%       Figure is activated
+%       q - quit the figure
+%       s - saves the scored values to subject_id/subject_id_Sleep_Scoring.mat
+% 
+%       MOUSE CLICKS One left mouse button click - select beginning of region to score
+%       Second left mouse button click - selects ends of region to score
+%       Third left mouse button click - erases selection done by previous two
+%       clicks
 %
-% Copyright (c) 2017-2018, Mayo Foundation for Medical Education and Research (MFMER),
-% All rights reserved. Academic, non-commercial use of this software is allowed with
-% expressed permission of the developers. MFMER and the developers disclaim all implied
-% warranties of merchantability and fitness for a particular purpose with respect to this software,
-% its application, and any verbal or written statements regarding its use.
-% The software may not be distributed to third parties without consent of MFMER.
-% Use of this software constitutes acceptance of these terms and acceptance of all risk
-% and liability arising from the software?s use.
-% Contributors: Vaclav Kremen.
+%       SLEEP SCORING When some time interval is selected to score:
+%       0 - sets awake score
+%       1 - N1 score
+%       2 - N2 score
+%       3 - N3 score
+%       5 - REM score
+%       7 - Unknown score
 %
+% Copyright 2019. Mayo Foundation for Medical Education and Research (MFMER). All rights reserved. Academic, non-commercial use of this software is allowed with expressed permission of the developers. MFMER and the developers disclaim all implied warranties of merchantability and fitness for a particular purpose with respect to this software, its application, and any verbal or written statements regarding its use. The software may not be distributed to third parties without consent of MFMER. Use of this software constitutes acceptance of these terms and acceptance of all risk and liability arising from the software?s use.
+%
+% Contributors: Vaclav Kremen, Vaclav Gerla.
+%
+% Version 1.0, 2019, Vaclav Kremen, Mayo Clinic.
 %
 % Acknowledgement: When use, acknlowledge please and refer to these journal papers:
-%?Kremen, V., Duque, J. J., Brinkmann, B. H., Berry, B. M., Kucewicz, M. T.,
+% Kremen, V., Duque, J. J., Brinkmann, B. H., Berry, B. M., Kucewicz, M. T.,
 % Khadjevand, F., ? Worrell, G. A. (2017). Behavioral state classification in
 % epileptic brain using intracranial electrophysiology. Journal of Neural
 % Engineering, 14(2), 026001. https://doi.org/10.1088/1741-2552/aa5688
@@ -51,6 +102,7 @@
 % hierarchical clustering. Journal of Neuroscience Methods, 317(February),
 % 61?70. https://doi.org/10.1016/j.jneumeth.2019.01.013
 
+%% 
 function [] = Assess_the_sleep()
 global SelectedEpochs time_axes Gold_Standard_Score hPlot ...
 what_feat_plot median_feat feature_struct i subject_id hFig 
@@ -64,7 +116,7 @@ if ~exist('feature_struct')
     % load the data from folder subject_id/subject_id
     load(sprintf('%s%s%s%s%s_data.mat', cd, filesep, subject_id, filesep, subject_id));
     
-    fsamp_new = 64;
+    fsamp_new = 64; % downsample to 64 Hz
     window_epochs_in_one_run = 86400;  % do one day of epochs - length of epoch needs to be define beforehand
     window_cwt_size_samples = window_epochs_in_one_run*30*fs;
     CWT_default_NumOctaves = 8;
@@ -72,16 +124,11 @@ if ~exist('feature_struct')
     CWT_default_TimeBandwidth = 90;
     
     
-    %channel_features = zeros(window_epochs_in_one_run, length(channels), 8);
-    
-    %%
-    
     i = 1; % what DAY to start from
     from_el = 1; % what ELECTRODE to start from
     skip_el = 1; % which STEP to skip to other electrodes
     n_electrodes = length(El_number); % get number of channels available
     
-    %curr_seg = zeros(n_electrodes, 34527199);
     WT = [];
     Maximas = [];
     features = [];
@@ -128,7 +175,7 @@ if ~exist('feature_struct')
         [~,ind] = max(sub_wt(from_f, :));
         max_plot = f_cwt(from_f(ind,:),1)';
         
-        %% plot the figure for each electrode
+        %% plot the figure for each electrode and save it
         hFig = figure;
         subplot(2,1,1)
         title (sprintf('Electrode nubmer %s', num2str(j)));
@@ -189,11 +236,12 @@ features = feature_struct.features;
 features_key = feature_struct.features_key;
 stage = feature_struct.stage;
 stage_key = feature_struct.stage_key;
-fs = feature_struct.fs;
 El_name = feature_struct.El_name;
 El_number = feature_struct.El_number;
-if exist('fs') == 0
-    fs = 250;
+if isfield(feature_struct,'fs')
+    fs = feature_struct.fs;
+else
+    fs = 250; % set default sampling rate to 250 Hz.   
 end
 
 % calculate median scalogram
@@ -208,7 +256,7 @@ time_axes = [1:length(max_plot)];
 
 % plot score, if available and plot median accross electrodes
 
-hFig = figure('Position', [700, 1000, 1700, 1200]);
+hFig = figure('Position', [700, 1000, 1200, 800]);
 set(hFig, 'KeyPressFcn', @MainWindowManualClick_callback); % create call back for mouse clicks
 
 subplot(3+length(what_feat_plot)+1,1,1)
