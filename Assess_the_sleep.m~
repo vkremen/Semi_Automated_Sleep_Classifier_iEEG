@@ -5,7 +5,7 @@
 % INPUT It loads data from structure, looks for /subject_id/subject_id_data.mat
 %       It needs subject_id and its indexing 'z' variable defined as global in Matlab Workspace and
 %       set properly as a string name with existing folder name:
-%       global subject_id; e.g. subject_id = '403_017_0002';
+%       global subject_id; subject_id = '403_017_0002';
 %       Input data saved to subject_id_data.mat consists of:
 %           Data: double [M:L], L number of raw EEG data samples for each
 %           of M electrodes.
@@ -21,7 +21,7 @@
 %           link to numbers and score in STAGE (if it
 %           wasn't done, the variable is missing)
 %
-%       If feature_struct variable file is present in directory it skips feature
+%       If feature_struct variable is in Matlab Workspace it skips feature
 %       extraction, otherwise goes next, it extracts features from all 
 %       electrodes and plot figures to subject_id directory to be ready 
 %       for electrode selection if needed
@@ -501,6 +501,7 @@ end
             y_limites(2)*ones(1, size(Gold_Standard_Score(Gold_Standard_Score==2),2)), ...
             'o','color',[0,0,0], 'LineWidth', 5);  % N1
     end
+  
  
     
 function hFig_CloseRequestFcn_callback(hObject, eventdata, handles)
