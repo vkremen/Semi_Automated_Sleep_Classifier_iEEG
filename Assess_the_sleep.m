@@ -114,7 +114,9 @@ hPlot = []; % handler of plot
 %% if no features were calculated (no .mat file), load the data file with data, extract features, save features
 if ~isfile(sprintf('%s%s%s%s%s_feature_struct.mat', cd, filesep, subject_id{z}, filesep, subject_id{z}))
     % load the data from folder subject_id/subject_id
+    fprintf('\nLoading the data... ')
     load(sprintf('%s%s%s%s%s_data.mat', cd, filesep, subject_id{z}, filesep, subject_id{z}));
+    fprintf('Done.\n');
     
     fsamp_new = 64; % downsample to 64 Hz
     window_epochs_in_one_run = 86400;  % do one day of epochs - length of epoch needs to be define beforehand
@@ -195,8 +197,8 @@ if ~isfile(sprintf('%s%s%s%s%s_feature_struct.mat', cd, filesep, subject_id{z}, 
         all_ha(2).YGrid = 'on';
         
         % print images
-        dest = [cd filesep subject_id filesep];
-        saveas(hFig,sprintf('%s%s%s_ToSelectElectrode_%s.png', dest, filesep, num2str(subject_id), num2str(El_number(j))));
+        dest = [cd filesep subject_id{z} filesep];
+        saveas(hFig,sprintf('%s%s%s_ToSelectElectrode_%s.png', dest, filesep, num2str(subject_id{z}), num2str(El_number(j))));
         close(hFig);
         
         % save to variable matrix
