@@ -105,7 +105,7 @@
 %% 
 function [] = Assess_the_sleep()
 global SelectedEpochs time_axes Gold_Standard_Score hPlot ...
-what_feat_plot median_feat feature_struct z subject_id hFig 
+what_feat_plot median_feat feature_struct z i subject_id hFig 
 
 SelectedEpochs = []; % vector for selected epoch to score manually
 Gold_Standard_Score = []; % vector to hold gold standard scoring
@@ -330,7 +330,7 @@ end
 %% --- For manual corrections ---
 
 function MainWindowManualClick_callback(src, evt)
-global   SelectedEpochs  time_axes Gold_Standard_Score subject_id z hFig 
+global   SelectedEpochs  time_axes Gold_Standard_Score subject_id z i hFig; 
 if strcmp(evt.Character, 's')
     % saving data if confirmed by user
     answer = questdlg('Would you like to save your scoring now?'); 
@@ -341,11 +341,11 @@ if strcmp(evt.Character, 's')
             dest = [cd filesep subject_id{z} filesep];
             save(strcat(dest, subject_id{z}, '_Sleep_Scoring.mat'), 'Gold_Standard_Score', '-v7.3');
             close(h_msgbox);
-            return
+            return;
         case 'No'
-            return
+            return;
         case 'Cancel'
-            return
+            return;
     end
 elseif strcmp(evt.Character, 'q')
     % pop-up confirmation dialog
@@ -364,12 +364,12 @@ elseif strcmp(evt.Character, 'q')
             savefig(hFig,sprintf('%s%s%s_Median_Spectra_features_and_Sleep_Stages.fig', dest, filesep, num2str(subject_id{z})));
             
             delete(hFig); %
-            return
+            return;
         case 'No'
             delete(hFig); %
-            return
+            return;
         case 'Cancel'
-            return
+            return;
     end
 end
 
@@ -416,7 +416,7 @@ end
 
 
     function getMousePositionOnImage(src, event)
-        global SelectedEpochs
+        global SelectedEpochs;
         
         handles = get(src);
         cursorPoint = get(handles.CurrentAxes, 'CurrentPoint');
@@ -427,10 +427,10 @@ end
         xLimits = get(handles.CurrentAxes, 'xlim');
         yLimits = get(handles.CurrentAxes, 'ylim');
         
-        if (curX<min(xLimits)) (curX==min(xLimits))
-        end
-        if (curX>max(xLimits)) (curX==max(xLimits))
-        end
+        %if (curX<min(xLimits)) (curX==min(xLimits))
+        %end
+        %if (curX>max(xLimits)) (curX==max(xLimits))
+        %end
         
         WhatToChange = size(SelectedEpochs,2)+1; % get index of selected segments (to define if start, end or delete).
         if WhatToChange >= 3

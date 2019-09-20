@@ -64,7 +64,9 @@
 function ExtractUWdata(subject_id);
 
 % load the data from file - needs to be in /subject_id/subjec_id.mat
+fprintf('\nLoading data... ');
 load(sprintf('%s%s%s%s%s.mat', cd, filesep, subject_id, filesep, subject_id));
+fprintf('Done.\n');
 
 El_number = [];
 El_name ={};
@@ -79,6 +81,7 @@ var_list = eval('who'); % get list of variables from Matlab Workspace
 % scan through whole list of electrodes and get data, fs and names and
 % numbers of electrodes
 tic
+fprintf('Extracting the data...');
 c=1; % electrode saved, start from 1
 for jj = 1:size(var_list,1)
     % read each individual variable if it is LFT electrode get data
@@ -101,6 +104,7 @@ for jj = 1:size(var_list,1)
 end
 
 fprintf('Extracted data: %s sec\n', num2str(toc));
+fprintf('Saving data... ');
 tic
 dest = [cd filesep subject_id filesep];
 save(strcat(dest, subject_id, '_data.mat'), 'El_name', 'El_number', 'Data', 'fs', 'stage', 'stage_key', '-v7.3');

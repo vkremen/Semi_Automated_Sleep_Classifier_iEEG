@@ -2,7 +2,7 @@
 %
 % SYNOPSIS: UW_sleep_wrapper()
 %
-% INPUT List of directory names in format: subject_id = {'409_041_0001'
+% INPUT do global subject_id z; first. List of directory names in format: subject_id = {'409_041_0001'
 %       '409_041_0002' '369_074_0000' '384_038_0000'}; needs to be in
 %       Matlab Workspace as global variable. Variable z needs to be in
 %       Matlab Workspace as global variable too and can be set either as
