@@ -23,7 +23,8 @@ If all data are ready in structure described for subject_id_data.mat, then only 
 
 # Contributors: Vaclav Kremen, Vaclav Gerla.
 
-# Acknowledgement: When use, acknlowledge please and refer to these journal papers:
+# Acknowledgment: When use whole, parts, or are inspired by, we appreciate 
+ you acknowledge and refer these journal papers:
  Kremen, V., Duque, J. J., Brinkmann, B. H., Berry, B. M., Kucewicz, M. T., 
  Khadjevand, F., ? Worrell, G. A. (2017). Behavioral state classification in 
  epileptic brain using intracranial electrophysiology. Journal of Neural 
