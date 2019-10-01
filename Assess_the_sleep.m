@@ -22,11 +22,11 @@
 %           wasn't done, the variable is missing)
 %
 %       If feature_struct variable file is present in directory it skips feature
-%       extraction, otherwise goes next, it extracts features from all 
-%       electrodes and plot figures to subject_id directory to be ready 
+%       extraction, otherwise goes next, it extracts features from all
+%       electrodes and plot figures to subject_id directory to be ready
 %       for electrode selection if needed
 %
-% OUTPUT If feature_struct was not available, it loads the data from 
+% OUTPUT If feature_struct was not available, it loads the data from
 %       /subject_id/subject_id_data.m and run a feature extraction (feature_extraction.m) and
 %       Then it aggregates all the features to a structure and saves extracted
 %       features to /subject_it/subject_id_features.mat
@@ -35,7 +35,7 @@
 %           WT: double [65:E], wavelet scalogram matrix with 65 frequency
 %           lines and E number of epochs
 %           wavelet_maximas: double [1:E], maximas of power in each epoch (taken from WT)
-%           f_cwt: double [E], frequency of each frequency line in WT
+%           f_cwt: double [65], frequency of each frequency line in WT
 %           features: double [21,E,M], 21 features calculated for E number
 %           of epoch and M number of channels
 %           features_key: cell array of strings {1:21} contains name of
@@ -52,7 +52,7 @@
 %           link to numbers and score in STAGE (if it
 %           wasn't done, the variable is missing)
 %           fs: double [1], sampling rate of time-domain data
-%           El_name: 
+%
 %
 %       Then it extracts the median features and plots the resulting image to
 %       assess the sleep architecture. It saves the plotted images as png and fig
@@ -62,11 +62,11 @@
 %       stagining of the sleep based on features and wavelet scalogram.
 %
 % CONTROLS of Figure and sleep scoring:
-%       KEY STROKES and mouse click works on any part of windows when 
+%       KEY STROKES and mouse click works on any part of windows when
 %       Figure is activated
 %       q - quit the figure
 %       s - saves the scored values to subject_id/subject_id_Sleep_Scoring.mat
-% 
+%
 %       MOUSE CLICKS One left mouse button click - select beginning of region to score
 %       Second left mouse button click - selects ends of region to score
 %       Third left mouse button click - erases selection done by previous two
@@ -102,10 +102,10 @@
 % hierarchical clustering. Journal of Neuroscience Methods, 317(February),
 % 61?70. https://doi.org/10.1016/j.jneumeth.2019.01.013
 
-%% 
+%%
 function [] = Assess_the_sleep()
 global SelectedEpochs time_axes Gold_Standard_Score hPlot ...
-what_feat_plot median_feat feature_struct z i subject_id hFig 
+what_feat_plot median_feat feature_struct z i subject_id hFig
 
 SelectedEpochs = []; % vector for selected epoch to score manually
 Gold_Standard_Score = []; % vector to hold gold standard scoring
@@ -117,34 +117,34 @@ if ~isfile(sprintf('%s%s%s%s%s_feature_struct.mat', cd, filesep, subject_id{z}, 
     fprintf('\nLoading the data... ')
     load(sprintf('%s%s%s%s%s_data.mat', cd, filesep, subject_id{z}, filesep, subject_id{z}));
     fprintf('Done.\n');
-    
+
     fsamp_new = 64; % downsample to 64 Hz
     window_epochs_in_one_run = 86400;  % do one day of epochs - length of epoch needs to be define beforehand
     window_cwt_size_samples = window_epochs_in_one_run*30*fs;
     CWT_default_NumOctaves = 8;
     CWT_default_VoicesPerOctave = 8;
     CWT_default_TimeBandwidth = 90;
-    
+
     i = 1; % what DAY to start from
     from_el = 1; % what ELECTRODE to start from
     skip_el = 1; % which STEP to skip to other electrodes
     n_electrodes = length(El_number); % get number of channels available
-    
+
     WT = [];
     Maximas = [];
     features = [];
     features_key = {};
-    
+
     %%  read all day segments and perform Wavelet analysis on that
     for j = from_el : skip_el : n_electrodes % print images for all electrodes
         x = []; sub_wt = []; max_plot =[]; fdata = []; fdesc = {};
-        
+
         % Wavelet
         % resampling
         x = []; x = Data(j,:);
         x(isnan(x)) = 0; % to plot wavelet with discontinuities as mean
         x = resample(x, round(10*fsamp_new), round(10*fs));
-        
+
         % extract features
         tic
         segm_size = 30; % define epoch length (30 sec)
@@ -153,7 +153,7 @@ if ~isfile(sprintf('%s%s%s%s%s_feature_struct.mat', cd, filesep, subject_id{z}, 
         fdata = fdata(:,1:end-1); % crop the last segment off not to overlap to next day
         fprintf('\tSignal #%s/%s;\n\t\tfeatures calculated: %s sec\n',...
             num2str(j), num2str(n_electrodes), num2str(toc));
-        
+
         % CWT
         tic
         [sub_wt, f_cwt] = cwt(x, fsamp_new, 'NumOctaves', ...
@@ -162,20 +162,20 @@ if ~isfile(sprintf('%s%s%s%s%s_feature_struct.mat', cd, filesep, subject_id{z}, 
             CWT_default_TimeBandwidth);
         sub_wt = zscore(abs(sub_wt));
         fprintf('\t\twavelet calculated: %s sec\n', num2str(toc));
-        
-        
+
+
         % get rid of slow waves and high frequency artifact at the end
         % of nyquist
         [from_f,~] = find(f_cwt>=1.5); % find all frequencies above 1 Hz
         from_f = from_f(3:end,1); % get rid of three high freq samples
-        
+
         % RESIZE result
         epoch_num = round(size(sub_wt, 2) ./ (30 * fsamp_new));
         sub_wt = imresize(sub_wt, [size(sub_wt, 1) epoch_num], 'bicubic');
-        
+
         [~,ind] = max(sub_wt(from_f, :));
         max_plot = f_cwt(from_f(ind,:),1)';
-        
+
         %% plot the figure for each electrode and save it
         hFig = figure;
         subplot(2,1,1)
@@ -189,25 +189,25 @@ if ~isfile(sprintf('%s%s%s%s%s_feature_struct.mat', cd, filesep, subject_id{z}, 
         plot(max_plot);
         ylabel('f(Hz)');
         title (sprintf('Maximum of spectra in plot above'));
-        
+
         set(gca,'XMinorTick','on');
         xlim([0 length(max_plot)]);
         all_ha = findobj(hFig  , 'type', 'axes', 'tag', '' );
         all_ha(1).YGrid = 'on'; % turn on Y-Grids
         all_ha(2).YGrid = 'on';
-        
+
         % print images
         dest = [cd filesep subject_id{z} filesep];
         saveas(hFig,sprintf('%s%s%s_ToSelectElectrode_%s.png', dest, filesep, num2str(subject_id{z}), num2str(El_number(j))));
         close(hFig);
-        
+
         % save to variable matrix
         WT(:,:,end+1) = sub_wt;
         Maximas = [Maximas; max_plot];
         features(:,:,end+1) = fdata;
         features_key = fdesc;
     end
-    
+
     % accumulate the features in a structure
     WT = WT(:,:,2:end); % delete first zeros
     feature_struct.WT = WT;
@@ -220,8 +220,8 @@ if ~isfile(sprintf('%s%s%s%s%s_feature_struct.mat', cd, filesep, subject_id{z}, 
     feature_struct.fs = fs;
     feature_struct.El_name = El_name;
     feature_struct.El_number = El_number;
-    
-    
+
+
     %% save the calculated features for future use
     dest = [cd filesep subject_id{z} filesep];
     save(strcat(dest, subject_id{z}, '_feature_struct.mat'), 'feature_struct', '-v7.3');
@@ -245,7 +245,7 @@ El_number = feature_struct.El_number;
 if isfield(feature_struct,'fs')
     fs = feature_struct.fs;
 else
-    fs = 250; % set default sampling rate to 250 Hz.   
+    fs = 250; % set default sampling rate to 250 Hz.
 end
 
 % calculate median scalogram
@@ -330,10 +330,10 @@ end
 %% --- For manual corrections ---
 
 function MainWindowManualClick_callback(src, evt)
-global   SelectedEpochs  time_axes Gold_Standard_Score subject_id z i hFig; 
+global   SelectedEpochs  time_axes Gold_Standard_Score subject_id z i hFig;
 if strcmp(evt.Character, 's')
     % saving data if confirmed by user
-    answer = questdlg('Would you like to save your scoring now?'); 
+    answer = questdlg('Would you like to save your scoring now?');
     switch answer
         case 'Yes'
             % save variables
@@ -357,12 +357,12 @@ elseif strcmp(evt.Character, 'q')
             dest = [cd filesep subject_id{z} filesep];
             save(strcat(dest, subject_id{z}, '_Sleep_Scoring.mat'), 'Gold_Standard_Score', '-v7.3');
             close(h_msgbox);
-            
+
             % print images
             dest = [cd filesep subject_id{z} filesep];
             saveas(hFig,sprintf('%s%s%s_Median_Spectra_features_and_Sleep_Stages.png', dest, filesep, num2str(subject_id{z})));
             savefig(hFig,sprintf('%s%s%s_Median_Spectra_features_and_Sleep_Stages.fig', dest, filesep, num2str(subject_id{z})));
-            
+
             delete(hFig); %
             return;
         case 'No'
@@ -387,9 +387,9 @@ if size(SelectedEpochs,2) == 2
                 % reassing all epochs selected to selected class
                 OnsetRow = find(time_axes >=    SelectedEpochs(1,1),1);
                 OffsetRow = find(time_axes <=    SelectedEpochs(1,2),1,'last');
-                
+
                 %Score_backup_temp = Gold_Standard_Score(OnsetRow:OffsetRow, 1);
-                
+
                 switch WhatScore
                     case 0
                         Gold_Standard_Score(OnsetRow:OffsetRow) = 6*ones(1, OffsetRow-OnsetRow+1);  % for plotting Awake is top
@@ -409,7 +409,7 @@ if size(SelectedEpochs,2) == 2
                 end
             end
             RefreshHypnoPlotManual(); % refresh plot
-            
+
         end
     end
 end
@@ -417,21 +417,21 @@ end
 
     function getMousePositionOnImage(src, event)
         global SelectedEpochs;
-        
+
         handles = get(src);
         cursorPoint = get(handles.CurrentAxes, 'CurrentPoint');
         curX = cursorPoint(1,1);
         curY = cursorPoint(1,2);
-        
+
         %check if mouse clicked outside of axes component
         xLimits = get(handles.CurrentAxes, 'xlim');
         yLimits = get(handles.CurrentAxes, 'ylim');
-        
+
         %if (curX<min(xLimits)) (curX==min(xLimits))
         %end
         %if (curX>max(xLimits)) (curX==max(xLimits))
         %end
-        
+
         WhatToChange = size(SelectedEpochs,2)+1; % get index of selected segments (to define if start, end or delete).
         if WhatToChange >= 3
             SelectedEpochs = []; % Erase Selected Epochs
@@ -439,18 +439,18 @@ end
             SelectedEpochs(1, WhatToChange) = curX (1); % Put in x coordinate of click
         end
         SelectedEpochs = sort(SelectedEpochs);
-        
+
         RefreshHypnoPlotManual();
-        
+
     end
 
 
     function RefreshHypnoPlotManual()
         global SelectedEpochs time_axes Gold_Standard_Score hPlot  what_feat_plot median_feat feature_struct i;
         y_limites = [];
-        
+
         delete(hPlot);
-        
+
         % do Delta Beta plot and show candidates of clear wake and clear deep sleep
         hPlot = subplot(3+length(what_feat_plot)+1,1,i+1);
         Db = median_feat(what_feat_plot(4),:)./median_feat(what_feat_plot(end),:);
@@ -462,15 +462,15 @@ end
             'yo', 'MarkerSize', 5, 'MarkerFaceColor', 'y');
         plot(find(Db>prctile(Db,DbcritSWS)),Db(find(Db>prctile(Db,DbcritSWS))),...
             'ko', 'MarkerSize', 5, 'MarkerFaceColor', 'k');
-        
+
         xlim([0 length(median_feat)]);
         title(sprintf('%s over %s', ...
             feature_struct.features_key{what_feat_plot(4)}, feature_struct.features_key{what_feat_plot(end)}));
         set(gca,'Xticklabel',[])
         set(gcf, 'WindowButtonDownFcn', @getMousePositionOnImage); % define mouse click callback
-        
+
         hold on;
-        
+
         % plot vertical selection if found
         y_limites = ylim;
         if size(SelectedEpochs,2) == 1
@@ -479,7 +479,7 @@ end
             plot([SelectedEpochs(1,1) SelectedEpochs(1,1)],  [y_limites(1) y_limites(2)], 'g', 'LineWidth', 2); % mark start of selected segment
             plot([SelectedEpochs(1,2) SelectedEpochs(1,2)],  [y_limites(1) y_limites(2)], 'r', 'LineWidth', 2); % mark start of selected segment
         end
-        
+
         % plot score horizontal bar for each possible score
         % plot sleep score horizontal bar for each possible behavioral
         % stage
@@ -503,8 +503,8 @@ end
             y_limites(2)*ones(1, size(Gold_Standard_Score(Gold_Standard_Score==2),2)), ...
             'o','color',[0,0,0], 'LineWidth', 5);  % N1
     end
- 
-    
+
+
 function hFig_CloseRequestFcn_callback(hObject, eventdata, handles)
 % hObject    handle to figure1 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
